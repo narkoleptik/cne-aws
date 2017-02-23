@@ -337,4 +337,33 @@ class CneEc2
 		table.align_column(4, :center)
     puts table
   end
+
+  def vpcs
+		output = []
+    regions = @ec2_client.describe_regions
+    regions["regions"].each do |r|
+      ec2_tmp = Aws::EC2::Client.new(
+        region: r["region_name"],
+        access_key_id: ENV['AWS_ACCESS_KEY_ID'],
+        secret_access_key: ENV['AWS_SECRET_ACCESS_KEY']
+      )
+      response = ec2_tmp.describe_vpcs()
+
+      output <<  [
+        "#{r['region_name']}".colorize(:yellow),
+        "#{response.vpcs.count}".colorize(:yellow)
+      ]
+    end
+
+    table = Terminal::Table.new(
+      :headings => [
+        'Region'.colorize(:blue),
+        'VPC Count'.colorize(:blue)
+      ],
+      :rows => output.sort_by! { |name| [ name[0], name[1]] }
+    )
+
+		table.align_column(1, :center)
+    puts table
+  end
 end
