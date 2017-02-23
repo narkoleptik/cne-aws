@@ -228,4 +228,55 @@ class CneEc2
       @ec2.instance(instance_id).stop
     end
   end
+
+  def instances_per_region
+		output = []
+    regions = @ec2_client.describe_regions
+    regions["regions"].each do |r|
+      running = 0;
+      stopped = 0;
+      terminated = 0;
+      ec2_tmp = Aws::EC2::Client.new(
+        region: r["region_name"],
+        access_key_id: ENV['AWS_ACCESS_KEY_ID'],
+        secret_access_key: ENV['AWS_SECRET_ACCESS_KEY']
+      )
+      response = ec2_tmp.describe_instances()
+      response.reservations.each do |r|
+        case r[:instances].first[:state][:name]
+        when 'running'
+          running += 1
+        when 'stopped'
+          stopped += 1
+        when 'terminated'
+          terminated +=1
+        end
+      end
+
+      output <<  [
+        "#{r['region_name']}".colorize(:yellow),
+        "#{response.reservations.count}".colorize(:yellow),
+        "#{running}".colorize(:yellow),
+        "#{stopped}".colorize(:yellow),
+        "#{terminated}".colorize(:yellow)
+      ]
+    end
+
+    table = Terminal::Table.new(
+      :headings => [
+        'Region'.colorize(:blue),
+        'Instance Count'.colorize(:blue),
+        'Running'.colorize(:blue),
+        'Stoppped'.colorize(:blue),
+        'Terminated'.colorize(:blue)
+      ],
+      :rows => output.sort_by! { |name| [ name[0], name[1]] }
+    )
+
+		table.align_column(1, :center)
+		table.align_column(2, :center)
+		table.align_column(3, :center)
+		table.align_column(4, :center)
+    puts table
+  end
 end
