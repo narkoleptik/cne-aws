@@ -6,7 +6,7 @@ cne_ec2 = CneEc2.new
 
 if ARGV[0].nil?
   puts "Usage: cne-ec2 [commands]".colorize(:red)
-  puts "Commands: instances|security|unhealthy|elbs|terminate|stop|reboot".colorize(:red)
+  puts "Commands: instances|security|unhealthy|elbs|terminate|stop|reboot|regions".colorize(:red)
   exit 1
 end
 
@@ -28,6 +28,9 @@ case ARGV[0]
 
   when 'unhealthy'
     cne_ec2.list_unhealthy_hosts
+
+  when 'regions'
+    cne_ec2.instances_per_region
 
   when 'elbs'
     cne_ec2.display_all_elbs
