@@ -279,4 +279,62 @@ class CneEc2
 		table.align_column(4, :center)
     puts table
   end
+
+  def volumes
+		output = []
+    regions = @ec2_client.describe_regions
+    regions["regions"].each do |r|
+      available = 0;
+      in_use = 0;
+      other = 0;
+      total_space = 0;
+      available_space = 0;
+      in_use_space = 0;
+      other_space = 0;
+      ec2_tmp = Aws::EC2::Client.new(
+        region: r["region_name"],
+        access_key_id: ENV['AWS_ACCESS_KEY_ID'],
+        secret_access_key: ENV['AWS_SECRET_ACCESS_KEY']
+      )
+      response = ec2_tmp.describe_volumes()
+      response.volumes.each do |v|
+        case v[:state]
+        when 'in-use'
+          in_use += 1
+          in_use_space += v[:size]
+        when 'available'
+          available += 1
+          available_space += v[:size]
+        else
+          other += 1
+          other_space += v[:size]
+        end
+      end
+
+      output <<  [
+        "#{r['region_name']}".colorize(:yellow),
+        "#{response.volumes.count}".colorize(:yellow),
+        "#{in_use} #{in_use_space}G".colorize(:yellow),
+        "#{available} #{available_space}G".colorize(:yellow),
+        "#{other} #{other_space}G".colorize(:yellow)
+      ]
+    end
+
+    table = Terminal::Table.new(
+      :headings => [
+        'Region'.colorize(:blue),
+        'Volume Count'.colorize(:blue),
+        'In-Use'.colorize(:blue),
+        'Available'.colorize(:blue),
+        'Other'.colorize(:blue)
+      ],
+      :rows => output.sort_by! { |name| [ name[0], name[1]] }
+    )
+
+		table.align_column(1, :center)
+		table.align_column(2, :center)
+		table.align_column(3, :center)
+		table.align_column(4, :center)
+    puts table
+  end
 end
